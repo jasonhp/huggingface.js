@@ -181,7 +181,7 @@ async function vcr(
 		const tape: Tape = {
 			url,
 			init: {
-				headers: init.headers && omit(init.headers as Record<string, string>, ["Authorization", "User-Agent"]),
+				headers: init.headers && omit(init.headers as Record<string, string>, ["Authorization", "User-Agent", "X-Key"]),
 				method: init.method,
 				body: typeof init.body === "string" && init.body.length < 1_000 ? init.body : undefined,
 			},
@@ -191,9 +191,15 @@ async function vcr(
 				statusText: response.statusText,
 				headers: Object.fromEntries(
 					// Remove varying headers as much as possible
-					[...response.headers.entries()].filter(
-						([key]) => key !== "date" && key !== "content-length" && !key.startsWith("x-") && key !== "via"
-					)
+					(() => {
+						const entries: [string, string][] = [];
+						response.headers.forEach((value, key) => {
+							if (key !== "date" && key !== "content-length" && !key.startsWith("x-") && key !== "via") {
+								entries.push([key, value]);
+							}
+						});
+						return entries;
+					})()
 				),
 			},
 		};
